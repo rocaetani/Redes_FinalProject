@@ -10,10 +10,10 @@ public class SceneManager : MonoBehaviour
     // Events
     public delegate void OnMainMenuLostConnectionDelegate();
     public static event OnMainMenuLostConnectionDelegate OnMainMenuLostConnection;
-    
+
     public delegate void OnMenuLoadedDelegate(string sceneName);
     public static event OnMenuLoadedDelegate OnMenuLoaded;
-    
+
     public delegate void OnMatchLoadedDelegate(string sceneName);
     public static event OnMatchLoadedDelegate OnMatchLoaded;
 
@@ -92,7 +92,7 @@ public class SceneManager : MonoBehaviour
     private void loadMatch()
     {
         // TODO get scene name from lobby
-        NetworkController.switchNetworkScene("SampleScene");
+        NetworkController.switchNetworkScene("SceneBuilderTest");
     }
 
     private void TriggerSceneLoadEvent(UnityScene.Scene scene, UnityScene.LoadSceneMode mode)
@@ -104,7 +104,7 @@ public class SceneManager : MonoBehaviour
         }
         else
         {
-            OnMatchLoaded?.Invoke(scene.name); 
+            OnMatchLoaded?.Invoke(scene.name);
         }
 
 
