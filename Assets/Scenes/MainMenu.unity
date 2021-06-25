@@ -5928,6 +5928,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: SceneManager
       objectReference: {fileID: 0}
+    - target: {fileID: 3806232346622104752, guid: 36a488169971b2b49befd725e2b9f9b0,
+        type: 3}
+      propertyPath: m_TagString
+      value: Untagged
+      objectReference: {fileID: 0}
     - target: {fileID: 5643220815420532934, guid: 36a488169971b2b49befd725e2b9f9b0,
         type: 3}
       propertyPath: m_LocalPosition.x
