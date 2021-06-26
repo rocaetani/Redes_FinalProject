@@ -52,6 +52,7 @@ public class MatchManager : NetworkBehaviour
 
             // Signal that all configs are available for client requests
             _configsAvailable = true;
+            OnGenerationConfigsAvailable?.Invoke();
         }
     }
 
