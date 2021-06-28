@@ -1,12 +1,126 @@
-﻿using System.Collections;
-
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using MLAPI;
 using MLAPI.Messaging;
 
+public enum TileType
+{
+    Empty = 0,
+    BreakableWall = 1,
+    UnbreakableWall = 2
+}
 public class MatchManager : NetworkBehaviour
 {
+    private struct Coords
+    {
+        public int x, y;
+    }
+
+    private class MatchLayout : NetworkBehaviour
+    {
+        Action<int, int, TileType> _updateClientMatch;
+
+        private int _rowCount;
+        private int _colCount;
+
+        private List<GameObject> _tileObjects;
+        private List<TileType> _tileTypes;
+
+        private GameObject _unbreakableWallPrefab;
+        private GameObject _breakableWallPrefab;
+
+        private Transform _prefabContainer;
+
+        public MatchLayout(int x, int y, GameObject unbreakablePrefab, GameObject breakablePrefab, Transform prefabContainer, Action<int, int, TileType> updateClientMatch)
+        {
+            _updateClientMatch = updateClientMatch;
+
+            _rowCount = x;
+            _colCount = y;
+
+            var count = x * y;
+            _tileObjects = new List<GameObject>(count);
+            _tileTypes = new List<TileType>(count);
+
+            for(int i = 0; i < count; i++)
+            {
+                _tileObjects.Add(null);
+                _tileTypes.Add(TileType.Empty);
+            }
+
+            _unbreakableWallPrefab = unbreakablePrefab;
+            _breakableWallPrefab = breakablePrefab;
+
+            _prefabContainer = prefabContainer;
+        }
+
+        public GameObject getGridTileObject(int x, int y) {
+            return _tileObjects[x * _colCount + y];
+        }
+
+        public void initializeTile(int x, int y, TileType tile) => updateTile(x, y, tile);
+
+        private void updateTile(int x, int y, TileType type)
+        {
+            var i = x * _colCount + y;
+
+            if(_tileTypes[i] == type)
+            {
+                return;
+            }
+
+            _tileTypes[i] = type;
+
+            Destroy(_tileObjects[i]);
+
+            const int prefabSize = 10;
+            const int prefabTranslation = 5;
+            const float prefabHeight = 5.5f;
+
+            var position = new Vector3(x * prefabSize + prefabTranslation, prefabHeight, y * prefabSize + prefabTranslation);
+            switch(type)
+            {
+                case TileType.Empty:
+                    _tileObjects[i] = null;
+                    break;
+
+                case TileType.BreakableWall:
+                    _tileObjects[i] = Instantiate(_breakableWallPrefab, position, Quaternion.identity, _prefabContainer);
+                    break;
+
+                case TileType.UnbreakableWall:
+                    _tileObjects[i] = Instantiate(_unbreakableWallPrefab, position, Quaternion.identity, _prefabContainer);
+                    break;
+            }
+        }
+
+        public TileType this[int x, int y]
+        {
+            get => _tileTypes[x * _colCount + y];
+
+            set
+            {
+                if(IsServer)
+                {
+                    if(!IsHost)
+                    {
+                        updateTile(x, y, value);
+                    }
+                    _updateClientMatch(x, y, value);
+                }
+            }
+        }
+
+        public void updateClientTile(int x, int y, TileType tile)
+        {
+            print("Received Server Tile Update");
+            updateTile(x, y, tile);
+        }
+
+    }
+
     // Events
     private delegate void OnGenerationConfigsAvailableDelegate();
     private event OnGenerationConfigsAvailableDelegate OnGenerationConfigsAvailable;
@@ -17,6 +131,8 @@ public class MatchManager : NetworkBehaviour
     private Transform _prefabContainer;
 
     private int _mapSeed;
+
+    private MatchLayout _matchLayout;
 
     [Header("Building Blocks")]
     public GameObject UnbreakableWallPrefab;
@@ -48,7 +164,7 @@ public class MatchManager : NetworkBehaviour
             fillPercentage = Mathf.Clamp(fillPercentage, 0, 100);
 
             // Initialize a random seed from Unity's RNG
-            _mapSeed = Random.Range(int.MinValue, int.MaxValue);
+            _mapSeed = UnityEngine.Random.Range(int.MinValue, int.MaxValue);
 
             // Signal that all configs are available for client requests
             _configsAvailable = true;
@@ -62,6 +178,8 @@ public class MatchManager : NetworkBehaviour
         if(IsServer || !(IsServer || IsClient)) // Simply generate the map if you're either the Server, or an Offline instance
         {
             generateMap();
+
+            StartCoroutine(doTestUpdate());
         }
         else
         {
@@ -69,9 +187,26 @@ public class MatchManager : NetworkBehaviour
         }
     }
 
+    private IEnumerator doTestUpdate()
+    {
+        while(true)
+        {
+            yield return new WaitForSeconds(1);
+            var x = UnityEngine.Random.Range(0, mapWidth);
+            var z = UnityEngine.Random.Range(0, mapHeight);
+
+            var type = UnityEngine.Random.Range(0,3);
+
+            _matchLayout[x,z] = (TileType) type;
+            print($"Update at {x},{z}");
+        }
+    }
+
     private void generateMap()
     {
-        var openSpaces = generateEmptyMap();
+        var matchLayout = new MatchLayout(mapWidth, mapHeight, UnbreakableWallPrefab, BreakableWallPrefab, _prefabContainer, updateClientMatch_ClientRpc);
+
+        var openSpaces = generateEmptyMap(ref matchLayout);
 
         // We use System.Random here instead of Unity's Random, because we must
         // seed it with a fixed number to ensure all Clients generate a map that is
@@ -93,12 +228,13 @@ public class MatchManager : NetworkBehaviour
             int randomSpaceIndex = mapGenRNG.Next(openSpaces.Count);
 
             // Place new breakable wall
-            Instantiate(BreakableWallPrefab, openSpaces[randomSpaceIndex], Quaternion.identity, _prefabContainer);
-            openSpaces.RemoveAt(randomSpaceIndex);
+            matchLayout.initializeTile(openSpaces[randomSpaceIndex].x, openSpaces[randomSpaceIndex].y, TileType.BreakableWall);
 
+            openSpaces.RemoveAt(randomSpaceIndex);
             breakableWallsToPlace--;
         }
 
+        _matchLayout = matchLayout;
 
         // Vector3 playerPosition1 = new Vector3(1*10, 6, 1*10);
         // Vector3 playerPosition2 = new Vector3(1*10, 6,  (height - 2)*10);
@@ -107,30 +243,28 @@ public class MatchManager : NetworkBehaviour
         // MatchManager.Instance.SpawnPlayers(playerPosition1, playerPosition2, playerPosition3, playerPosition4);
     }
 
-    private List<Vector3> generateEmptyMap()
+    private List<Coords> generateEmptyMap(ref MatchLayout matchLayout)
     {
-        List<Vector3> openSpaces = new List<Vector3>();
-        for (int x = 0; x < mapWidth; x++)
+        List<Coords> openSpaces = new List<Coords>();
+        for(int x = 0; x < mapWidth; x++)
         {
-            for (int z = 0; z < mapHeight; z++)
+            for(int z = 0; z < mapHeight; z++)
             {
                 // Instantiate the floor
                 Vector3 position = new Vector3(x*10+5, 0, z*10+5);
                 Instantiate(FloorPrefab, position, Quaternion.identity, _prefabContainer);
 
-                position.y = 5.5f;
-
                 // Instantiate unbreakable walls in a grid pattern
                 if(isEven(x) && isEven(z))
                 {
-                    Instantiate(UnbreakableWallPrefab, position, Quaternion.identity, _prefabContainer);
+                    matchLayout.initializeTile(x, z, TileType.UnbreakableWall);
                     continue;
                 }
 
                 // Instantiate the edges of the map
                 if(x == 0 || x == mapWidth - 1 || z == 0 || z == mapHeight - 1)
                 {
-                    Instantiate(UnbreakableWallPrefab, position, Quaternion.identity, _prefabContainer);
+                    matchLayout.initializeTile(x, z, TileType.UnbreakableWall);
                     continue;
                 }
 
@@ -142,6 +276,7 @@ public class MatchManager : NetworkBehaviour
                 {
                     if (z == 1 || z == 2 || z == mapHeight - 2 || z == mapHeight - 3)
                     {
+                        matchLayout.initializeTile(x, z, TileType.Empty);
                         continue;
                     }
                 }
@@ -150,6 +285,7 @@ public class MatchManager : NetworkBehaviour
                 {
                     if (z == 1 || z == mapHeight - 2 )
                     {
+                        matchLayout.initializeTile(x, z, TileType.Empty);
                         continue;
                     }
                 }
@@ -158,6 +294,7 @@ public class MatchManager : NetworkBehaviour
                 {
                     if (z == 1 || z == 2 || z == mapHeight - 2 || z == mapHeight - 3)
                     {
+                        matchLayout.initializeTile(x, z, TileType.Empty);
                         continue;
                     }
                 }
@@ -166,13 +303,17 @@ public class MatchManager : NetworkBehaviour
                 {
                     if (z == 1 || z == mapHeight - 2 )
                     {
+                        matchLayout.initializeTile(x, z, TileType.Empty);
                         continue;
                     }
                 }
 
-                // If we didn't fall into any of the previous conditiond,
+                // If we didn't fall into any of the previous conditions,
                 // mark this spot as empty
-                openSpaces.Add(position);
+                Coords open;
+                open.x = x;
+                open.y = z;
+                openSpaces.Add(open);
             }
         }
 
@@ -248,6 +389,12 @@ public class MatchManager : NetworkBehaviour
         fillPercentage = percentage;
         _mapSeed = seed;
         generateMap();
+    }
+
+    [ClientRpc]
+    private void updateClientMatch_ClientRpc(int x, int y, TileType type)
+    {
+        _matchLayout?.updateClientTile(x, y, type);
     }
 
 }
