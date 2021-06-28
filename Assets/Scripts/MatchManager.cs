@@ -391,6 +391,10 @@ public class MatchManager : NetworkBehaviour
         generateMap();
     }
 
+
+    // In order to update the Match variable, we must rely on the RPC call
+    // of a network object, which is why we pass this method as a parameter for
+    // MatchLayout, and call a match layout method here.
     [ClientRpc]
     private void updateClientMatch_ClientRpc(int x, int y, TileType type)
     {
