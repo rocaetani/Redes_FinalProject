@@ -10,14 +10,14 @@ public class SceneManager : MonoBehaviour
     // Events
     public delegate void OnMainMenuLostConnectionDelegate();
     public static event OnMainMenuLostConnectionDelegate OnMainMenuLostConnection;
-    
+
     public delegate void OnMenuLoadedDelegate(string sceneName);
     public static event OnMenuLoadedDelegate OnMenuLoaded;
-    
+
     public delegate void OnMatchLoadedDelegate(string sceneName);
     public static event OnMatchLoadedDelegate OnMatchLoaded;
 
-    private const string _selfTag = "SceneManager";
+    private static SceneManager _instance = null;
 
     private const string _mainMenu = "MainMenu";
     private bool _onMainMenu
@@ -27,27 +27,40 @@ public class SceneManager : MonoBehaviour
 
     private void Awake()
     {
-        Object.DontDestroyOnLoad(gameObject);
-
-        LobbyMenu.OnStartMatch += loadMatch;
-        NetworkController.OnDisconnected += returnToMainMenu;
-
-        UnityScene.SceneManager.sceneLoaded += TriggerSceneLoadEvent;
-
-        // If, after moving to DontDestroyOnLoad, we detect more than one
-        // SceneManager object, that means we are the duplicate one that came after
-        // And so should delete ourselves
-        if(GameObject.FindGameObjectsWithTag(_selfTag).Length > 1)
+        // If another instance of SceneManager already existed
+        // before ourselves it means we are the duplicate one that
+        // came after and so should delete ourselves
+        if(_instance != null)
         {
             DestroyImmediate(gameObject);
+        }
+        else
+        {
+            _instance = this;
+
+            Object.DontDestroyOnLoad(gameObject);
+
+            LobbyMenu.OnStartMatch += loadMatch;
+            NetworkController.OnDisconnected += returnToMainMenu;
+
+            UnityScene.SceneManager.sceneLoaded += TriggerSceneLoadEvent;
         }
     }
 
     private void OnDestroy()
     {
-        LobbyMenu.OnStartMatch -= loadMatch;
-        NetworkController.OnDisconnected -= returnToMainMenu;
-        UnityScene.SceneManager.sceneLoaded -= TriggerSceneLoadEvent;
+        if(_instance != this) // We are the duplicate
+        {
+            return;
+        }
+        else // We are the original
+        {
+            LobbyMenu.OnStartMatch -= loadMatch;
+            NetworkController.OnDisconnected -= returnToMainMenu;
+            UnityScene.SceneManager.sceneLoaded -= TriggerSceneLoadEvent;
+
+            _instance = null;
+        }
     }
 
     private void returnToMainMenu(bool wasHost, bool connectionWasLost)
@@ -92,22 +105,18 @@ public class SceneManager : MonoBehaviour
     private void loadMatch()
     {
         // TODO get scene name from lobby
-        NetworkController.switchNetworkScene("SampleScene");
+        NetworkController.switchNetworkScene("SceneBuilderTest");
     }
 
     private void TriggerSceneLoadEvent(UnityScene.Scene scene, UnityScene.LoadSceneMode mode)
     {
-
         if (scene.name == _mainMenu)
         {
             OnMenuLoaded?.Invoke(scene.name);
         }
         else
         {
-            OnMatchLoaded?.Invoke(scene.name); 
+            OnMatchLoaded?.Invoke(scene.name);
         }
-
-
-
     }
 }
