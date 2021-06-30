@@ -9,15 +9,12 @@ public class PlayerMovement : NetworkBehaviour
 
 
     public float MoveSpeed;
-
     public float WalkSpeed;
 
     public bool FreezeMovement = false;
 
     private float _realSpeed;
-
     private float _verticalSpeed;
-
 
     private void Awake()
     {
@@ -68,5 +65,14 @@ public class PlayerMovement : NetworkBehaviour
         }
 
         _controller.Move(frameMovement);
+    }
+
+    public void MoveToSpawn(Vector3 spawnPosition)
+    {
+        // Need to disable character controller to allow player teleport to Spawn
+        _controller.enabled = false;
+        transform.position = spawnPosition;
+        _controller.enabled = true;
+
     }
 }
