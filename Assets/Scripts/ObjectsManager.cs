@@ -8,10 +8,19 @@ public class ObjectsManager : MonoBehaviour
     [SerializeField]
     private GameObject _overviewCamera = null;
 
-    private void Start()
+    private void Awake()
     {
-        if(OverviewCamera == null) {
+        if(OverviewCamera == null)
+        {
             OverviewCamera = _overviewCamera;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if(OverviewCamera == _overviewCamera)
+        {
+            OverviewCamera = null;
         }
     }
 }
