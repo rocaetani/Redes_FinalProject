@@ -13,12 +13,14 @@ public enum TileType
 }
 public class MatchManager : NetworkBehaviour
 {
+    private const int _playersPerMatch = 4;
+
     private struct Coords
     {
         public int x, y;
     }
 
-    private class MatchLayout : NetworkBehaviour
+    private class MatchLayout
     {
         Action<int, int, TileType> _updateClientMatch;
 
@@ -102,9 +104,9 @@ public class MatchManager : NetworkBehaviour
 
             set
             {
-                if(IsServer)
+                if(NetworkController.IsServer)
                 {
-                    if(!IsHost)
+                    if(!NetworkController.IsHost)
                     {
                         updateTile(x, y, value);
                     }
@@ -122,13 +124,25 @@ public class MatchManager : NetworkBehaviour
     }
 
     // Events
+    private delegate void OnSpawnLocationDelegate(Vector3 spawnLocation);
+    private static event OnSpawnLocationDelegate OnSpawnLocation;
+
     private delegate void OnGenerationConfigsAvailableDelegate();
     private event OnGenerationConfigsAvailableDelegate OnGenerationConfigsAvailable;
 
+    private delegate void OnSpawnsAvailableDelegate();
+    private event OnSpawnsAvailableDelegate OnSpawnsAvailable;
+
+    private static Vector3 _clientSpawnLocation = Vector3.zero;
+
+    private static bool _clientSpawnAvailable = false;
     private bool _configsAvailable = false;
+    private bool _spawnsAvailable = false;
 
     private const string _containerName = "MatchPrefabs";
     private Transform _prefabContainer;
+
+    private Stack<Vector3> _spawnLocations;
 
     private int _mapSeed;
 
@@ -178,28 +192,15 @@ public class MatchManager : NetworkBehaviour
         if(IsServer || !(IsServer || IsClient)) // Simply generate the map if you're either the Server, or an Offline instance
         {
             generateMap();
-
-            StartCoroutine(doTestUpdate());
         }
         else
         {
             requestGenerationConfigs_ServerRpc();
         }
-    }
 
-    private IEnumerator doTestUpdate()
-    {
-        while(true)
-        {
-            yield return new WaitForSeconds(1);
-            var x = UnityEngine.Random.Range(0, mapWidth);
-            var z = UnityEngine.Random.Range(0, mapHeight);
+        // Unlike generation configs, all instances, including host, must request a spawn locations
+        requestSpawnLocation_ServerRpc();
 
-            var type = UnityEngine.Random.Range(0,3);
-
-            _matchLayout[x,z] = (TileType) type;
-            print($"Update at {x},{z}");
-        }
     }
 
     private void generateMap()
@@ -236,11 +237,23 @@ public class MatchManager : NetworkBehaviour
 
         _matchLayout = matchLayout;
 
-        // Vector3 playerPosition1 = new Vector3(1*10, 6, 1*10);
-        // Vector3 playerPosition2 = new Vector3(1*10, 6,  (height - 2)*10);
-        // Vector3 playerPosition3 = new Vector3((width - 2)*10, 6, 1*10);
-        // Vector3 playerPosition4 = new Vector3((width - 2)*10, 6, (height - 2)*10);
-        // MatchManager.Instance.SpawnPlayers(playerPosition1, playerPosition2, playerPosition3, playerPosition4);
+        if(IsServer)
+        {
+            createSpawns();
+        }
+    }
+
+    private void createSpawns()
+    {
+        _spawnLocations = new Stack<Vector3>(_playersPerMatch);
+
+        _spawnLocations.Push(new Vector3(1 * 10, 6, 1 * 10));
+        _spawnLocations.Push(new Vector3(1 * 10, 6,  (mapHeight - 2) * 10));
+        _spawnLocations.Push(new Vector3((mapWidth - 2) * 10, 6, 1 * 10));
+        _spawnLocations.Push(new Vector3((mapWidth - 2) * 10, 6, (mapHeight - 2) * 10));
+
+        _spawnsAvailable = true;
+        OnSpawnsAvailable?.Invoke();
     }
 
     private List<Coords> generateEmptyMap(ref MatchLayout matchLayout)
@@ -321,6 +334,26 @@ public class MatchManager : NetworkBehaviour
 
     }
 
+    public static void requestSpawnPoint(Action<Vector3> responseAction)
+    {
+        #if UNITY_EDITOR
+            print("Spawn Point Requested");
+        #endif
+
+        if(_clientSpawnAvailable)
+        {
+            responseAction?.Invoke(_clientSpawnLocation);
+            return;
+        }
+
+        void autoUnsubscribeEvent(Vector3 spawnLocation)
+        {
+            OnSpawnLocation -= autoUnsubscribeEvent;
+            responseAction?.Invoke(spawnLocation);
+        }
+
+        OnSpawnLocation += autoUnsubscribeEvent;
+    }
 
     private bool isEven(int value)
     {
@@ -336,15 +369,7 @@ public class MatchManager : NetworkBehaviour
             print($"Received Map Config request from #{rpcReceiveParams.Receive.SenderClientId}");
         #endif
 
-        // Prepare ClientRPC's params, so that we only
-        // reply with an RPC to the requester Client
-        var clientRpcParams = new ClientRpcParams
-        {
-            Send = new ClientRpcSendParams
-            {
-                TargetClientIds = new ulong[]{ rpcReceiveParams.Receive.SenderClientId }
-            }
-        };
+        var clientRpcParams = rpcReceiveParams.returnToSender();
 
         // If we can, simply send the params back to the client
         if(_configsAvailable)
@@ -401,4 +426,57 @@ public class MatchManager : NetworkBehaviour
         _matchLayout?.updateClientTile(x, y, type);
     }
 
+    // Same as above, when a client requests it's spawn location
+    // the Server sends it back
+    [ServerRpc(RequireOwnership = false)]
+    private void requestSpawnLocation_ServerRpc(ServerRpcParams rpcReceiveParams = default)
+    {
+        #if UNITY_EDITOR
+            print($"Received Spawn Location request from #{rpcReceiveParams.Receive.SenderClientId}");
+        #endif
+
+        void sendSpawn()
+        {
+            var spawnPosition = _spawnLocations.Count > 0? _spawnLocations.Pop() : Vector3.zero;
+            sendSpawnLocation_ClientRpc(spawnPosition, rpcReceiveParams.returnToSender());
+        }
+
+        // If we can, simply send the params back to the client
+        if(_spawnsAvailable)
+        {
+            #if UNITY_EDITOR
+                print("Spawn locations found, Sending back to client...");
+            #endif
+
+            sendSpawn();
+        }
+
+        // Otherwise, wait for the event to notify us that the configs are available
+        else
+        {
+            #if UNITY_EDITOR
+                print("Spawn locations NOT found!, deferring to Event...");
+            #endif
+
+            void waitForSpawn()
+            {
+                #if UNITY_EDITOR
+                    print("Spawn locations Updated, Sending back to client...");
+                #endif
+
+                OnSpawnsAvailable -= waitForSpawn;
+                sendSpawn();
+            }
+
+            OnGenerationConfigsAvailable += waitForSpawn;
+        }
+    }
+
+    [ClientRpc]
+    private void sendSpawnLocation_ClientRpc(Vector3 spawnLocation, ClientRpcParams clientRpcParams = default)
+    {
+        _clientSpawnLocation = spawnLocation;
+        _clientSpawnAvailable = true;
+        OnSpawnLocation?.Invoke(spawnLocation);
+    }
 }

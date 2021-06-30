@@ -33,6 +33,8 @@ public class PlayerController : NetworkBehaviour
     private PlayerMovement _movementScript;
     private CameraMove _cameraScript;
 
+    private Vector3 _spawnLocation;
+
     private void Awake()
     {
         _playerCamera = gameObject.GetComponentInChildren<Camera>();
@@ -46,6 +48,9 @@ public class PlayerController : NetworkBehaviour
         // Button events
         InputManager.OnEscapeKeyPress += freezePlayer;
         ExitMenu.OnStayOnMatch += unfreezePlayer;
+
+        // Scene Events
+        SceneManager.OnMatchLoaded += moveToSceneSpawn;
     }
 
     private void Start()
@@ -60,6 +65,8 @@ public class PlayerController : NetworkBehaviour
 
         InputManager.OnEscapeKeyPress -= freezePlayer;
         ExitMenu.OnStayOnMatch -= unfreezePlayer;
+
+        SceneManager.OnMatchLoaded -= moveToSceneSpawn;
 
         usePlayerCamera(false);
     }
@@ -91,6 +98,14 @@ public class PlayerController : NetworkBehaviour
 
             _cameraScript.MouseLocked = !frozen;
             _movementScript.FreezeMovement = frozen;
+        }
+    }
+
+    private void moveToSceneSpawn(string sceneName)
+    {
+        if(IsOwner)
+        {
+            MatchManager.requestSpawnPoint(spawnLocation => _movementScript.MoveToSpawn(spawnLocation));
         }
     }
 }
