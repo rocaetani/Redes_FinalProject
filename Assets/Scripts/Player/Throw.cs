@@ -1,55 +1,126 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using MLAPI;
+using MLAPI.Messaging;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using System.Linq;
 
 public class Throw : NetworkBehaviour
 {
+    public Transform BombPosition;
+    
     public GameObject BombPrefab;
-    private GameObject _bomb;
-    private Rigidbody _bombRigidbody;
+    
     public float Strength;
 
     public float ArcThrow;
-    
-    public Vector3 targetFake;
-    //public Camera Camera;
 
-    //public GameObject InstantiatedBomb;
-    // Start is called before the first frame update
+    private bool _isOn;
+
+    public List<GameObject> InstantiatedServerBombs;
+
+    public int _maxBombs;
+
     private void Awake()
     {
         if (IsServer)
         {
-            _bomb = Instantiate(BombPrefab, Vector3.zero, Quaternion.identity);
-            _bomb.GetComponent<NetworkObject>().Spawn();
-            _bombRigidbody = _bomb.GetComponent<Rigidbody>();
-            _bomb.SetActive(false);
+            InstantiatedServerBombs = new List<GameObject>();
+            _maxBombs = 4;
         }
+        _isOn = false;
+        SceneManager.OnMatchLoaded += TurnOn;
     }
 
-    // Update is called once per frame
+    private void OnDestroy()
+    {
+        SceneManager.OnMatchLoaded -= TurnOn;
+    }
+
+    private void TurnOn(string sceneName)
+    {
+        _isOn = true;
+    }
+
     private void Update()
     {
-        if (IsOwner)
+        if (IsOwner && _isOn)
         {
-            Vector3 screenMiddle = new Vector3();
-            screenMiddle.x = Screen.width / 2;
-            screenMiddle.y = Screen.height / 2;
-            Ray ray = Camera.main.ScreenPointToRay(screenMiddle);
+            Vector3 initialPosition = BombPosition.position;
 
-            Vector3 target = ray.direction * Strength;
-            target += Vector3.up * ArcThrow;
+            Vector3 target = CalculateTargetPosition();
 
             if (InputManager.PressFireButton())
             {
-                _bombRigidbody.velocity = Vector3.zero;
-                _bomb.transform.position = new Vector3(transform.position.x, transform.position.y + 3, transform.position.z);
-                _bomb.SetActive(true);
-                _bombRigidbody.AddForce(target, ForceMode.Impulse);
-                targetFake = target;
+                Throw_ServerRpc(target, initialPosition);
             }
         }
+
+    }
+
+    [ServerRpc]
+    private void Throw_ServerRpc(Vector3 target, Vector3 initialPosition)
+    {
+        if (GetBomb(out var bomb))
+        {
+            
+            bomb.SetActive(true);
+            bomb.GetComponent<Bomb>().ActivateBomb_ClientRpc();
+            bomb.transform.position = initialPosition;
+            Rigidbody bombRigidbody = bomb.GetComponent<Rigidbody>();
+            bombRigidbody.velocity = Vector3.zero;
+            
+            bomb.GetComponent<Bomb>().OnStart();
+            bombRigidbody.AddForce(target, ForceMode.Impulse);
+        }
+        else
+        {
+            print("Numero de bombas exedido");
+        }
+    }
+
+
+
+
+
+    private bool GetBomb(out GameObject bomb)
+    {
+        if (InstantiatedServerBombs.FindAll(bombInstance => bombInstance.activeSelf).Count < _maxBombs)
+        {
+
+            bomb = InstantiatedServerBombs.Find(bombInstance => !bombInstance.activeSelf);
+            if (bomb == null)
+            {
+                bomb = InstantiateBomb();
+                InstantiatedServerBombs.Add(bomb);
+            }
+            return true;
+            
+        }
+        bomb = null;
+        return false;
+    }
+
+    private GameObject InstantiateBomb()
+    {
+        GameObject instantiatedBomb = Instantiate(BombPrefab, Vector3.one, Quaternion.identity);
+        instantiatedBomb.GetComponent<NetworkObject>().Spawn();
+        return instantiatedBomb;
+    }
+    
+    
+    private Vector3 CalculateTargetPosition()
+    {
+        Vector3 screenMiddle = new Vector3();
+        screenMiddle.x = Screen.width / 2;
+        screenMiddle.y = Screen.height / 2;
+        Ray ray = Camera.main.ScreenPointToRay(screenMiddle);
+
+        Vector3 target = ray.direction * Strength;
+        target += Vector3.up * ArcThrow;
+        return target;
     }
 
 }
