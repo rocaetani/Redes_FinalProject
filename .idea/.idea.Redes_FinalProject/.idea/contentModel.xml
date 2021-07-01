@@ -8,6 +8,7 @@
       <e p="Assets" t="Include">
         <e p="Scripts" t="Include">
           <e p="Bomb.cs" t="Include" />
+          <e p="ExplosionEffect.cs" t="Include" />
           <e p="Extensions.cs" t="Include" />
           <e p="InputManager.cs" t="Include" />
           <e p="MatchManager.cs" t="Include" />
