@@ -30,9 +30,35 @@ public class NetworkController : MonoBehaviour
     public static event OnOtherClientDisconnectedDelegate OnOtherClientDisconnected;
 
     // Static
+    private const ushort _port = 53658;
+
     private static NetworkController _instance = null;
 
-    private const ushort _port = 53658;
+    public static bool IsServer
+    {
+        get => _instance != null? _instance._netManager.IsServer : false;
+    }
+
+    public static bool IsHost
+    {
+        get => _instance != null? _instance._netManager.IsHost : false;
+    }
+
+    public static bool IsClient
+    {
+        get => _instance != null? _instance._netManager.IsClient : false;
+    }
+
+    public static bool IsThinClient
+    {
+        get => _instance != null? !_instance._netManager.IsHost && _instance._netManager.IsClient : false;
+    }
+
+    public static bool IsOffline
+    {
+        get => _instance != null? !(_instance._netManager.IsClient || _instance._netManager.IsServer) : true;
+    }
+
 
     private NetworkManager _netManager;
     private UNetTransport _ipTransport;
