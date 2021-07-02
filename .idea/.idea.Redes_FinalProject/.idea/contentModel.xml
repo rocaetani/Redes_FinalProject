@@ -19,6 +19,9 @@
             <e p="GameMenu.cs" t="Include" />
             <e p="LoadingMenu.cs" t="Include" />
             <e p="LobbyMenu.cs" t="Include" />
+            <e p="MenuComponents" t="Include">
+              <e p="ColorPick.cs" t="Include" />
+            </e>
             <e p="MenuManager.cs" t="Include" />
           </e>
           <e p="Network" t="Include">
@@ -26,6 +29,8 @@
           </e>
           <e p="ObjectsManager.cs" t="Include" />
           <e p="Player" t="Include">
+            <e p="BombermanColor.cs" t="Include" />
+            <e p="BombermanMaterial.cs" t="Include" />
             <e p="Movement 1" t="Include">
               <e p="CameraMove.cs" t="Include" />
               <e p="PlayerMovement.cs" t="Include" />
@@ -33,11 +38,11 @@
             <e p="Movement 2" t="Include">
               <e p="PlayerMovement2.cs" t="Include" />
             </e>
+            <e p="PlayerColor.cs" t="Include" />
             <e p="PlayerController.cs" t="Include" />
             <e p="PlayerManager.cs" t="Include" />
             <e p="Throw.cs" t="Include" />
           </e>
-          <e p="SceneBuilder.cs" t="Include" />
           <e p="SceneManager.cs" t="Include" />
         </e>
       </e>

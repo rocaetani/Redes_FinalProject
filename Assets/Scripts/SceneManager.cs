@@ -105,7 +105,7 @@ public class SceneManager : MonoBehaviour
     private void loadMatch()
     {
         // TODO get scene name from lobby
-        NetworkController.switchNetworkScene("SceneBuilderTest");
+        NetworkController.switchNetworkScene("SampleScene");
     }
 
     private void TriggerSceneLoadEvent(UnityScene.Scene scene, UnityScene.LoadSceneMode mode)

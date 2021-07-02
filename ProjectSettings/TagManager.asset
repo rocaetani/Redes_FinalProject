@@ -6,6 +6,9 @@ TagManager:
   tags:
   - Network
   - Menu
+  - SceneManager
+  - ColorButton
+  - ColorB
   layers:
   - Default
   - TransparentFX

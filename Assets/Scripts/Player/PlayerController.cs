@@ -32,6 +32,8 @@ public class PlayerController : NetworkBehaviour
     private Camera _playerCamera;
     private PlayerMovement _movementScript;
     private CameraMove _cameraScript;
+    
+    
 
     private Vector3 _spawnLocation;
 
