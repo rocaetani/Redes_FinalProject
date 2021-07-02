@@ -56,6 +56,11 @@ public class PlayerController : NetworkBehaviour
         // Match Events
         Bomb.OnExplosion += detectExplosion;
         PlayerManager.OnEndMatch += endPlayerMovement;
+
+        if (IsOwner)
+        {
+            gameObject.GetComponentInChildren<AudioListener>().enabled = true;
+        }
     }
 
     private void Start()

@@ -18,6 +18,8 @@ public class ExplosionEffect : MonoBehaviour
 
     private void Awake()
     {
+        
+        GetComponent<AudioSource>().Play();
         _mainPS = GetComponent<ParticleSystem>();
     }
 
