@@ -14344,7 +14344,6 @@ MonoBehaviour:
   PSForward: {fileID: 7373330927156032974}
   PSBack: {fileID: 7373330927228581437}
   DistanceMultiplier: 20
-  Power: 2
 --- !u!1 &7373330927228581376
 GameObject:
   m_ObjectHideFlags: 0

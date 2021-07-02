@@ -278,7 +278,7 @@ MonoBehaviour:
   BombPosition: {fileID: 5946484500821804824}
   BombPrefab: {fileID: 2952949016012933129, guid: 3b724fc8cd321a34d85744717d66bae0,
     type: 3}
-  Strength: 10
+  ThrowStrength: 10
   ArcThrow: 10
   InstantiatedServerBombs: []
   _maxBombs: 0

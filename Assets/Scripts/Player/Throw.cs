@@ -10,11 +10,11 @@ using System.Linq;
 public class Throw : NetworkBehaviour
 {
     public Transform BombPosition;
-    
     public GameObject BombPrefab;
-    
-    public float Strength;
 
+    public int ExplosionPower = 3;
+
+    public float ThrowStrength;
     public float ArcThrow;
 
     private bool _isOn;
@@ -60,31 +60,6 @@ public class Throw : NetworkBehaviour
 
     }
 
-    [ServerRpc]
-    private void Throw_ServerRpc(Vector3 target, Vector3 initialPosition)
-    {
-        if (GetBomb(out var bomb))
-        {
-            
-            bomb.SetActive(true);
-            bomb.GetComponent<Bomb>().ActivateBomb_ClientRpc();
-            bomb.transform.position = initialPosition;
-            Rigidbody bombRigidbody = bomb.GetComponent<Rigidbody>();
-            bombRigidbody.velocity = Vector3.zero;
-            
-            bomb.GetComponent<Bomb>().OnStart();
-            bombRigidbody.AddForce(target, ForceMode.Impulse);
-        }
-        else
-        {
-            print("Numero de bombas exedido");
-        }
-    }
-
-
-
-
-
     private bool GetBomb(out GameObject bomb)
     {
         if (InstantiatedServerBombs.FindAll(bombInstance => bombInstance.activeSelf).Count < _maxBombs)
@@ -97,7 +72,7 @@ public class Throw : NetworkBehaviour
                 InstantiatedServerBombs.Add(bomb);
             }
             return true;
-            
+
         }
         bomb = null;
         return false;
@@ -109,8 +84,8 @@ public class Throw : NetworkBehaviour
         instantiatedBomb.GetComponent<NetworkObject>().Spawn();
         return instantiatedBomb;
     }
-    
-    
+
+
     private Vector3 CalculateTargetPosition()
     {
         Vector3 screenMiddle = new Vector3();
@@ -118,9 +93,34 @@ public class Throw : NetworkBehaviour
         screenMiddle.y = Screen.height / 2;
         Ray ray = Camera.main.ScreenPointToRay(screenMiddle);
 
-        Vector3 target = ray.direction * Strength;
+        Vector3 target = ray.direction * ThrowStrength;
         target += Vector3.up * ArcThrow;
         return target;
+    }
+
+    [ServerRpc]
+    private void Throw_ServerRpc(Vector3 target, Vector3 initialPosition)
+    {
+        if (GetBomb(out var bomb))
+        {
+            var bombScript = bomb.GetComponent<Bomb>();
+
+            bomb.SetActive(true);
+            bombScript.ActivateBomb_ClientRpc();
+
+            bombScript.explosionPower.Value = ExplosionPower;
+
+            bomb.transform.position = initialPosition;
+            Rigidbody bombRigidbody = bomb.GetComponent<Rigidbody>();
+            bombRigidbody.velocity = Vector3.zero;
+
+            bomb.GetComponent<Bomb>().OnStart();
+            bombRigidbody.AddForce(target, ForceMode.Impulse);
+        }
+        else
+        {
+            print("Numero de bombas exedido");
+        }
     }
 
 }

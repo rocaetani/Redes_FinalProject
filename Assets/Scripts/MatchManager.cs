@@ -13,6 +13,8 @@ public enum TileType
 }
 public class MatchManager : NetworkBehaviour
 {
+    private static MatchManager _instance = null;
+
     private const int _playersPerMatch = 4;
 
     private struct Coords
@@ -20,7 +22,7 @@ public class MatchManager : NetworkBehaviour
         public int x, y;
     }
 
-    private class MatchLayout
+    public class MatchLayout
     {
         Action<int, int, TileType> _updateClientMatch;
 
@@ -90,10 +92,16 @@ public class MatchManager : NetworkBehaviour
 
                 case TileType.BreakableWall:
                     _tileObjects[i] = Instantiate(_breakableWallPrefab, position, Quaternion.identity, _prefabContainer);
+                    #if UNITY_EDITOR
+                        _tileObjects[i].name = $"[{x}, {y}]: Breakable";
+                    #endif
                     break;
 
                 case TileType.UnbreakableWall:
                     _tileObjects[i] = Instantiate(_unbreakableWallPrefab, position, Quaternion.identity, _prefabContainer);
+                    #if UNITY_EDITOR
+                        _tileObjects[i].name = $"[{x}, {y}]: Unbreakable";
+                    #endif
                     break;
             }
         }
@@ -136,6 +144,14 @@ public class MatchManager : NetworkBehaviour
     // Building Block Dimensions
     public const int blockSize = 10;
     public const int blockY = 6;
+    public static int width
+    {
+        get => _instance != null? _instance.mapWidth : 0;
+    }
+    public static int height
+    {
+        get => _instance != null? _instance.mapHeight : 0;
+    }
 
     private static Vector3 _clientSpawnLocation = Vector3.zero;
 
@@ -150,7 +166,11 @@ public class MatchManager : NetworkBehaviour
 
     private int _mapSeed;
 
-    private MatchLayout _matchLayout;
+    public MatchLayout _matchLayout;
+    public static MatchLayout matchMap
+    {
+        get => _instance != null? _instance._matchLayout : null;
+    }
 
     [Header("Building Blocks")]
     public GameObject UnbreakableWallPrefab;
@@ -164,6 +184,8 @@ public class MatchManager : NetworkBehaviour
 
     private void Awake()
     {
+        _instance = _instance ?? this;
+
         _prefabContainer = gameObject.GetComponent<Transform>();
 
         if(IsServer || !(IsServer || IsClient))
@@ -187,6 +209,14 @@ public class MatchManager : NetworkBehaviour
             // Signal that all configs are available for client requests
             _configsAvailable = true;
             OnGenerationConfigsAvailable?.Invoke();
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if(_instance == this)
+        {
+            _instance = null;
         }
     }
 
@@ -275,7 +305,10 @@ public class MatchManager : NetworkBehaviour
             {
                 // Instantiate the floor
                 Vector3 position = new Vector3(x*blockSize + blockSize/2, 0, z*blockSize + blockSize/2);
-                Instantiate(FloorPrefab, position, Quaternion.identity, _prefabContainer);
+                var floor = Instantiate(FloorPrefab, position, Quaternion.identity, _prefabContainer);
+                #if UNITY_EDITOR
+                    floor.name = $"[{x},{z}] Floor";
+                #endif
 
                 // Instantiate unbreakable walls in a grid pattern
                 if(isEven(x) && isEven(z))

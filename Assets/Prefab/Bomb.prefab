@@ -184,6 +184,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5328d4bf3294e644fa02ea8147c22470, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  explosionTimer: 5
+  explosionFX: {fileID: 7373330927174700023, guid: 798b74f46adc6ff4db186deec387a17c,
+    type: 3}
+  _childComponent: {fileID: 2420358430979174222}
 --- !u!1 &4472334324405404192
 GameObject:
   m_ObjectHideFlags: 0
