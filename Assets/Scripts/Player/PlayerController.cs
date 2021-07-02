@@ -32,8 +32,6 @@ public class PlayerController : NetworkBehaviour
     private Camera _playerCamera;
     private PlayerMovement _movementScript;
     private CameraMove _cameraScript;
-    
-    
 
     private Vector3 _spawnLocation;
 
@@ -53,6 +51,9 @@ public class PlayerController : NetworkBehaviour
 
         // Scene Events
         SceneManager.OnMatchLoaded += moveToSceneSpawn;
+
+        // Match Events
+        Bomb.OnExplosion += detectExplosion;
     }
 
     private void Start()
@@ -69,6 +70,8 @@ public class PlayerController : NetworkBehaviour
         ExitMenu.OnStayOnMatch -= unfreezePlayer;
 
         SceneManager.OnMatchLoaded -= moveToSceneSpawn;
+
+        Bomb.OnExplosion -= detectExplosion;
 
         usePlayerCamera(false);
     }
@@ -109,5 +112,144 @@ public class PlayerController : NetworkBehaviour
         {
             MatchManager.requestSpawnPoint(spawnLocation => _movementScript.MoveToSpawn(spawnLocation));
         }
+    }
+
+    private void detectExplosion(Vector3 explosionPosition, int explosionPower)
+    {
+        if(!IsOwner)
+        {
+            return;
+        }
+
+        if(outOfBounds(explosionPosition) || outOfBounds(transform.position))
+        {
+            return;
+        }
+
+        if(playerWasHit(transform.position, explosionPosition, explosionPower))
+        {
+            // kill player
+            print("player was killed");
+        }
+
+    }
+
+    private static bool outOfBounds(Vector3 position)
+    {
+        if(position.x < 0 || position.x >= MatchManager.width * MatchManager.blockSize)
+        {
+            return true;
+        }
+
+        if(position.z < 0 || position.z >= MatchManager.height * MatchManager.blockSize)
+        {
+            return true;
+        }
+
+        if(position.y < 0 || position.y > MatchManager.blockSize)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool playerWasHit(Vector3 playerPosition, Vector3 explosionPosition, int explosionPower)
+    {
+        int playerX, playerZ, explosionX, explosionZ;
+
+        var playerPositionOnGrid = MatchManager.converToMapCoords(playerPosition.x, playerPosition.z);
+        playerX = playerPositionOnGrid.x;
+        playerZ = playerPositionOnGrid.y;
+
+        var explosionPositionOnGrid = MatchManager.converToMapCoords(explosionPosition.x, explosionPosition.z);
+        explosionX = explosionPositionOnGrid.x;
+        explosionZ = explosionPositionOnGrid.y;
+
+        // Check if the explosion happened where the player is separately
+        if(playerX == explosionX && playerZ == explosionZ)
+        {
+            return true;
+        }
+
+        int min, max;
+
+        /** Horizontal (Variable X, Fixed Z) **/
+        // Forward
+        if(playerZ == explosionZ)
+        {
+            min = Mathf.Min(explosionX + 1, MatchManager.width - 1);
+            max = Mathf.Min(explosionX + explosionPower + 1, MatchManager.width);
+            for(int i = min; i < max; i++)
+            {
+                if(MatchManager.matchMap[i, explosionZ] != TileType.Empty)
+                {
+                    break;
+                }
+
+                if(i == playerX)
+                {
+                    print($"Player was hit! (HF)");
+                    return true;
+                }
+            }
+
+            // Back
+            min = Mathf.Max(explosionX - explosionPower - 1, 0);
+            max = Mathf.Max(explosionX - 1, 0);
+            for(int i = max; i > min; i--)
+            {
+                if(MatchManager.matchMap[i, explosionZ] != TileType.Empty)
+                {
+                    break;
+                }
+
+                if(i == playerX)
+                {
+                    print($"Player was hit! (HB)");
+                    return true;
+                }
+            }
+        }
+
+        /** Vertical (Fixed X, Variable Z) **/
+        // Forward
+        if(playerX == explosionX)
+        {
+            min = Mathf.Min(explosionZ + 1, MatchManager.height - 1);
+            max = Mathf.Min(explosionZ + explosionPower + 1, MatchManager.height);
+            for(int i = min; i < max; i++)
+            {
+                if(MatchManager.matchMap[explosionX, i] != TileType.Empty)
+                {
+                    break;
+                }
+
+                if(i == playerZ)
+                {
+                    print($"Player was hit! (VF)");
+                    return true;
+                }
+            }
+
+            // Back
+            min = Mathf.Max(explosionZ - explosionPower - 1, 0);
+            max = Mathf.Max(explosionZ - 1, 0);
+            for(int i = max; i > min; i--)
+            {
+                if(MatchManager.matchMap[explosionX, i] != TileType.Empty)
+                {
+                    break;
+                }
+
+                if(i == playerZ)
+                {
+                    print($"Player was hit! (VB)");
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }
