@@ -2,6 +2,7 @@
   "dependencies": {
     "com.mlapi.contrib.extensions": "https://github.com/Unity-Technologies/mlapi-community-contributions.git?path=/com.mlapi.contrib.extensions",
     "com.mlapi.contrib.transport.photon-realtime": "https://github.com/Unity-Technologies/mlapi-community-contributions.git?path=/Transports/com.mlapi.contrib.transport.photon-realtime",
+    "com.unity.2d.sprite": "1.0.0",
     "com.unity.collab-proxy": "1.2.16",
     "com.unity.ide.rider": "1.1.4",
     "com.unity.ide.vscode": "1.2.1",

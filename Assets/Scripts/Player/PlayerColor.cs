@@ -14,8 +14,6 @@ public class PlayerColor : NetworkBehaviour
 
     private void Start()
     {
-        
-        
         _meshRenderer = GetComponent<MeshRenderer>();
         if (IsOwner)
         {
@@ -26,7 +24,6 @@ public class PlayerColor : NetworkBehaviour
 
     }
     
-
     // 0 - Body
     // 1 - Head
     // 4 - Hand

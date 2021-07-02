@@ -329,7 +329,7 @@ GameObject:
   - component: {fileID: 1675007421004648749}
   m_Layer: 0
   m_Name: Player
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -476,10 +476,11 @@ MonoBehaviour:
   BombPosition: {fileID: 5946484500821804824}
   BombPrefab: {fileID: 2952949016012933129, guid: 3b724fc8cd321a34d85744717d66bae0,
     type: 3}
+  ExplosionPower: 3
   ThrowStrength: 10
   ArcThrow: 10
   InstantiatedServerBombs: []
-  _maxBombs: 0
+  MaxBombs: 0
 --- !u!114 &-2412267911150120978
 MonoBehaviour:
   m_ObjectHideFlags: 0

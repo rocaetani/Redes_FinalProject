@@ -29,8 +29,10 @@
           </e>
           <e p="ObjectsManager.cs" t="Include" />
           <e p="Player" t="Include">
-            <e p="BombermanColor.cs" t="Include" />
-            <e p="BombermanMaterial.cs" t="Include" />
+            <e p="Bomberman" t="Include">
+              <e p="BombermanColor.cs" t="Include" />
+              <e p="BombermanMaterial.cs" t="Include" />
+            </e>
             <e p="Movement 1" t="Include">
               <e p="CameraMove.cs" t="Include" />
               <e p="PlayerMovement.cs" t="Include" />
@@ -42,6 +44,11 @@
             <e p="PlayerController.cs" t="Include" />
             <e p="PlayerManager.cs" t="Include" />
             <e p="Throw.cs" t="Include" />
+          </e>
+          <e p="PowerUp" t="Include">
+            <e p="PowerUp.cs" t="Include" />
+            <e p="PowerUpSpawner.cs" t="Include" />
+            <e p="PowerUpType.cs" t="Include" />
           </e>
           <e p="SceneManager.cs" t="Include" />
         </e>
