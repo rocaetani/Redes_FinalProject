@@ -8,7 +8,8 @@ public class PowerUp : NetworkBehaviour
 {
     public PowerUpType Type;
 
-    public MeshRenderer MiddleMesh;
+    public MeshRenderer MiddleMesh1;
+    public MeshRenderer MiddleMesh2;
 
     public void ApplyEffect(GameObject objectPowered)
     {
@@ -43,13 +44,16 @@ public class PowerUp : NetworkBehaviour
         switch (materialIndex)
         {
             case 1:
-                MiddleMesh.material = PowerUpSpawner.Instance.PowerMaterial;
+                MiddleMesh1.material = PowerUpSpawner.Instance.PowerMaterial;
+                MiddleMesh2.material = PowerUpSpawner.Instance.PowerMaterial;
                 break;
             case 2:
-                MiddleMesh.material = PowerUpSpawner.Instance.SpeedMaterial;
+                MiddleMesh1.material = PowerUpSpawner.Instance.SpeedMaterial;
+                MiddleMesh2.material = PowerUpSpawner.Instance.SpeedMaterial;
                 break;
             case 3:
-                MiddleMesh.material = PowerUpSpawner.Instance.BombMaterial;
+                MiddleMesh1.material = PowerUpSpawner.Instance.BombMaterial;
+                MiddleMesh2.material = PowerUpSpawner.Instance.BombMaterial;
                 break;
         }
     }
