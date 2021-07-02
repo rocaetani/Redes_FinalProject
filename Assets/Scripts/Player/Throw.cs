@@ -17,36 +17,43 @@ public class Throw : NetworkBehaviour
     public float ThrowStrength;
     public float ArcThrow;
 
-    private bool _isOn;
+    private bool _isOnMatch;
 
     public List<GameObject> InstantiatedServerBombs;
 
-    public int _maxBombs;
+    public int MaxBombs;
 
     private void Awake()
     {
         if (IsServer)
         {
             InstantiatedServerBombs = new List<GameObject>();
-            _maxBombs = 4;
+            MaxBombs = 4;
         }
-        _isOn = false;
+        _isOnMatch = false;
         SceneManager.OnMatchLoaded += TurnOn;
+        SceneManager.OnMenuLoaded += TurnOff;
     }
 
     private void OnDestroy()
     {
         SceneManager.OnMatchLoaded -= TurnOn;
+        SceneManager.OnMenuLoaded -= TurnOff;
     }
 
     private void TurnOn(string sceneName)
     {
-        _isOn = true;
+        _isOnMatch = true;
+    }
+
+    private void TurnOff(string sceneName)
+    {
+        _isOnMatch = false;
     }
 
     private void Update()
     {
-        if (IsOwner && _isOn)
+        if (IsOwner && _isOnMatch && PlayerController.playerBehaviourEnabled)
         {
             Vector3 initialPosition = BombPosition.position;
 
@@ -62,7 +69,7 @@ public class Throw : NetworkBehaviour
 
     private bool GetBomb(out GameObject bomb)
     {
-        if (InstantiatedServerBombs.FindAll(bombInstance => bombInstance.activeSelf).Count < _maxBombs)
+        if (InstantiatedServerBombs.FindAll(bombInstance => bombInstance.activeSelf).Count < MaxBombs)
         {
 
             bomb = InstantiatedServerBombs.Find(bombInstance => !bombInstance.activeSelf);
