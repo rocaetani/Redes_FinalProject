@@ -28,7 +28,6 @@ public class Throw : NetworkBehaviour
         if (IsServer)
         {
             InstantiatedServerBombs = new List<GameObject>();
-            MaxBombs = 4;
         }
         _isOnMatch = false;
         SceneManager.OnMatchLoaded += TurnOn;

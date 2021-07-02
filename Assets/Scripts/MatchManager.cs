@@ -88,6 +88,7 @@ public class MatchManager : NetworkBehaviour
             {
                 case TileType.Empty:
                     _tileObjects[i] = null;
+                    PowerUpSpawner.Instance.GeneratePowerUp(position);
                     break;
 
                 case TileType.BreakableWall:

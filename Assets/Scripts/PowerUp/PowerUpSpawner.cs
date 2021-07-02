@@ -28,23 +28,20 @@ public class PowerUpSpawner : NetworkBehaviour
             Instance = null;
         }
     }
-
-    private void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.R))
-        {
-            GeneratePowerUp(new Vector3(0,2,0));
-        }
-    }
-
+    
 
     public void GeneratePowerUp(Vector3 position)
     {
         if (IsServer)
         {
-            GameObject powerUp = Instantiate(PowerUpPrefab, position, Quaternion.identity);
-            powerUp.GetComponent<NetworkObject>().Spawn();
-            GenerateRandomPowerUp(powerUp.GetComponent<PowerUp>());
+            int rand = Random.Range(1,4);
+            if (rand == 1)
+            {
+                position.y = 2;
+                GameObject powerUp = Instantiate(PowerUpPrefab, position, Quaternion.identity);
+                powerUp.GetComponent<NetworkObject>().Spawn();
+                GenerateRandomPowerUp(powerUp.GetComponent<PowerUp>());
+            }
         }
     }
 
