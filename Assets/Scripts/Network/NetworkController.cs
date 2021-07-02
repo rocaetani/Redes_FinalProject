@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using MLAPI;
 using MLAPI.Transports;
@@ -131,6 +132,7 @@ public class NetworkController : MonoBehaviour
         LoadingMenu.OnCancel += disconnect;
         LobbyMenu.OnCancelMatch += disconnect;
         ExitMenu.OnLeaveMatch += disconnect;
+        GameOverMenu.OnLeaveMatch += disconnect;
 
         if(_instance != this)
         {
@@ -149,6 +151,7 @@ public class NetworkController : MonoBehaviour
         LoadingMenu.OnCancel -= disconnect;
         LobbyMenu.OnCancelMatch -= disconnect;
         ExitMenu.OnLeaveMatch -= disconnect;
+        GameOverMenu.OnLeaveMatch -= disconnect;
     }
 
     private void startLobbyConnection(bool isHost, NetworkTransportTypes transportType, string address)
@@ -276,6 +279,18 @@ public class NetworkController : MonoBehaviour
     {
         yield return new WaitForSeconds(delaySeconds);
         disconnect();
+    }
+
+    public static List<ulong> getConnectedPlayers() => _instance.managerGetConnectedPlayers();
+    private List<ulong> managerGetConnectedPlayers()
+    {
+        return _netManager.ConnectedClientsList.Select(client => client.ClientId).ToList();
+    }
+
+    public static ulong getOwnID() => _instance.managerGetOwnID();
+    private ulong managerGetOwnID()
+    {
+        return _netManager.LocalClientId;
     }
 
     public static void disconnect() => _instance.managerDisconnect();
