@@ -111,10 +111,9 @@ public class Throw : NetworkBehaviour
             bombScript.explosionPower.Value = ExplosionPower;
 
             bomb.transform.position = initialPosition;
+
             Rigidbody bombRigidbody = bomb.GetComponent<Rigidbody>();
             bombRigidbody.velocity = Vector3.zero;
-
-            bomb.GetComponent<Bomb>().OnStart();
             bombRigidbody.AddForce(target, ForceMode.Impulse);
         }
         else

@@ -9,7 +9,10 @@ using UnityEngine;
 public class Bomb : NetworkBehaviour
 {
     public int explosionTimer = 5;
-    private int _timeStart;
+
+    // Events
+    public delegate void OnExplosionDelegate(Vector3 explosionPosition, int explosionPower);
+    public static event OnExplosionDelegate OnExplosion;
 
     public GameObject explosionFX;
     private GameObject _explosionFXInstance = null;
@@ -22,42 +25,34 @@ public class Bomb : NetworkBehaviour
         ReadPermission = NetworkVariablePermission.Everyone
     });
 
-    public void OnStart()
+    public void OnEnable()
     {
-        if (IsServer)
+        if(IsServer)
         {
-            _timeStart = (int) Time.time;
-
-        }
-    }
-
-    private void Update()
-    {
-        if (IsServer)
-        {
-            int timePassed = (int) Time.time - _timeStart;
-            if (timePassed > explosionTimer)
+            IEnumerator scheduleExplosion()
             {
+                yield return new WaitForSeconds(explosionTimer);
                 Explode();
             }
+
+            StartCoroutine(scheduleExplosion());
         }
     }
 
     private void Explode()
     {
-        if (IsServer)
+        Explode_ClientRpc();
+
+        const float waitTime = 0.5f;
+
+        IEnumerator destroyAfterExplosion()
         {
+            yield return new WaitForSeconds(waitTime);
             destroyMapBlocks();
-            Explode_ClientRpc();
+            gameObject.SetActive(false);
         }
-    }
 
-    private Tuple<int, int> getMapCoords()
-    {
-        var x = (int) transform.position.x / MatchManager.blockSize;
-        var z = (int) transform.position.z / MatchManager.blockSize;
-
-        return new Tuple<int, int>(x, z);
+        StartCoroutine(destroyAfterExplosion());
     }
 
     private void destroyMapBlocks()
@@ -70,25 +65,15 @@ public class Bomb : NetworkBehaviour
 
         var power = explosionPower.Value;
 
-        var coords = getMapCoords();
+        var coords = MatchManager.converToMapCoords(transform.position.x, transform.position.z);
 
-        var x = coords.Item1;
-        if(x < 0 || x >= MatchManager.width) // Out of Bounds
+        var x = coords.x;
+        var z = coords.y;
+
+        if(outOfBounds(x, transform.position.y, z))
         {
             return;
         }
-
-        var z = coords.Item2;
-        if(z < 0 || z >= MatchManager.height) // Out of Bounds
-        {
-            return;
-        }
-
-        if(transform.position.y < 0) // Out of Bounds
-        {
-            return;
-        }
-
 
         // The bonb landed on top of a block
         if(transform.position.y > MatchManager.blockSize)
@@ -178,6 +163,26 @@ public class Bomb : NetworkBehaviour
         }
     }
 
+    private bool outOfBounds(float x, float y, float z)
+    {
+        if(x < 0 || x >= MatchManager.width)
+        {
+            return true;
+        }
+
+        if(z < 0 || z >= MatchManager.height)
+        {
+            return true;
+        }
+
+        if(y < 0)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
     [ClientRpc]
     private void Explode_ClientRpc()
     {
@@ -187,16 +192,26 @@ public class Bomb : NetworkBehaviour
             _explosionFXInstance = Instantiate(explosionFX, Vector3.zero, Quaternion.identity);
         }
 
-        var coords = getMapCoords();
-        var x = coords.Item1 * MatchManager.blockSize + MatchManager.blockSize / 2;
-        var z = coords.Item2 * MatchManager.blockSize + MatchManager.blockSize / 2;
-        _explosionFXInstance.transform.position = new Vector3(x, transform.position.y, z);
+        // Get grid coords where the explosion happened
+        var coords = MatchManager.converToMapCoords(transform.position.x, transform.position.z);
+
+        // Convert from grid back to World coords of the center of the block
+        var x = coords.x * MatchManager.blockSize + MatchManager.blockSize / 2;
+        var z = coords.y * MatchManager.blockSize + MatchManager.blockSize / 2;
+        var explosionCenter = new Vector3(x, transform.position.y, z);
+
+        _explosionFXInstance.transform.position = explosionCenter;
 
         var fx = _explosionFXInstance.GetComponent<ExplosionEffect>();
         fx.SetPower(explosionPower.Value);
         fx.ActivateEffect();
 
-        gameObject.SetActive(false);
+        if(!IsHost)
+        {
+            gameObject.SetActive(false);
+        }
+
+        OnExplosion?.Invoke(explosionCenter, explosionPower.Value);
     }
 
     [ClientRpc]
