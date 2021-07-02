@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class ExplosionEffect : MonoBehaviour
 {
+    public const float explosionDuration = 0.5f;
+
     private ParticleSystem _mainPS;
     public ParticleSystem PSLeft;
     public ParticleSystem PSRight;
