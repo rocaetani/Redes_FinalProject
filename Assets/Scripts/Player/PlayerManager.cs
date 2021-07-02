@@ -11,7 +11,7 @@ public class PlayerManager : MonoBehaviour
     public static ColorPick ColorPick;
 
     public bool enablePlayerBehaviour = true;
-    
+
     public List<BombermanMaterial> BombermanColors;
 
     public static Dictionary<BombermanColor, BombermanMaterial> PossibleBombermanColors;
@@ -25,8 +25,8 @@ public class PlayerManager : MonoBehaviour
             PossibleBombermanColors.Add(bombermanColor.BombermanColor, bombermanColor);
         }
     }
-    
-    
+
+
     private void Start()
     {
         PlayerController.playerBehaviourEnabled = enablePlayerBehaviour;

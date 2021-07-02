@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using MLAPI;
+using MLAPI.Messaging;
 
 public class PlayerController : NetworkBehaviour
 {
@@ -129,9 +130,23 @@ public class PlayerController : NetworkBehaviour
         if(playerWasHit(transform.position, explosionPosition, explosionPower))
         {
             // kill player
-            print("player was killed");
+            Die();
         }
 
+    }
+
+    public void Die()
+    {
+        _movementScript.FreezeMovement = true;
+
+        IEnumerator waitBeforeDeath()
+        {
+            yield return new WaitForSeconds(ExplosionEffect.explosionDuration);
+            playerBehaviourEnabled = false;
+            requestPlayerDeath_ServerRpc();
+        }
+
+        StartCoroutine(waitBeforeDeath());
     }
 
     private static bool outOfBounds(Vector3 position)
@@ -189,7 +204,6 @@ public class PlayerController : NetworkBehaviour
 
                 if(i == playerX)
                 {
-                    print($"Player was hit! (HF)");
                     return true;
                 }
             }
@@ -206,7 +220,6 @@ public class PlayerController : NetworkBehaviour
 
                 if(i == playerX)
                 {
-                    print($"Player was hit! (HB)");
                     return true;
                 }
             }
@@ -227,7 +240,6 @@ public class PlayerController : NetworkBehaviour
 
                 if(i == playerZ)
                 {
-                    print($"Player was hit! (VF)");
                     return true;
                 }
             }
@@ -244,12 +256,27 @@ public class PlayerController : NetworkBehaviour
 
                 if(i == playerZ)
                 {
-                    print($"Player was hit! (VB)");
                     return true;
                 }
             }
         }
 
         return false;
+    }
+
+    // RPCs
+    [ServerRpc(RequireOwnership = false)]
+    private void requestPlayerDeath_ServerRpc()
+    {
+        // Check winner
+
+
+        broadcastPlayerDeath_ClientRpc();
+    }
+
+    [ClientRpc]
+    private void broadcastPlayerDeath_ClientRpc()
+    {
+        Destroy(gameObject);
     }
 }
