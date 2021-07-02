@@ -17,7 +17,7 @@ public class MatchManager : NetworkBehaviour
 
     private const int _playersPerMatch = 4;
 
-    private struct Coords
+    public struct Coords
     {
         public int x, y;
     }
@@ -401,6 +401,14 @@ public class MatchManager : NetworkBehaviour
     private bool isEven(int value)
     {
         return value % 2 == 0;
+    }
+
+    public static Coords converToMapCoords(float x, float y)
+    {
+        Coords res;
+        res.x = (int) x / MatchManager.blockSize;
+        res.y = (int) y / MatchManager.blockSize;
+        return res;
     }
 
     /*********** RPCs ***********/
