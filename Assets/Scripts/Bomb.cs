@@ -43,11 +43,9 @@ public class Bomb : NetworkBehaviour
     {
         Explode_ClientRpc();
 
-        const float waitTime = 0.5f;
-
         IEnumerator destroyAfterExplosion()
         {
-            yield return new WaitForSeconds(waitTime);
+            yield return new WaitForSeconds(ExplosionEffect.explosionDuration);
             destroyMapBlocks();
             gameObject.SetActive(false);
         }
