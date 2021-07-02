@@ -19,6 +19,8 @@ public class Throw : NetworkBehaviour
 
     private bool _isOnMatch;
 
+    private PlayerController _playerController;
+
     public List<GameObject> InstantiatedServerBombs;
 
     public int MaxBombs;
@@ -29,6 +31,9 @@ public class Throw : NetworkBehaviour
         {
             InstantiatedServerBombs = new List<GameObject>();
         }
+
+        _playerController = GetComponentInParent<PlayerController>();
+
         _isOnMatch = false;
         SceneManager.OnMatchLoaded += TurnOn;
         SceneManager.OnMenuLoaded += TurnOff;
@@ -52,7 +57,7 @@ public class Throw : NetworkBehaviour
 
     private void Update()
     {
-        if (IsOwner && _isOnMatch && PlayerController.playerBehaviourEnabled)
+        if (IsOwner && _isOnMatch && !_playerController.isFrozen)
         {
             Vector3 initialPosition = BombPosition.position;
 
