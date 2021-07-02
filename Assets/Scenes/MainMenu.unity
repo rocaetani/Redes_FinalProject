@@ -2751,6 +2751,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1049849560}
   - component: {fileID: 1049849559}
+  - component: {fileID: 1049849558}
   m_Layer: 0
   m_Name: PlayerManager
   m_TagString: Untagged
@@ -2758,6 +2759,23 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &1049849558
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1049849557}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  NetworkInstanceId: 0
+  PrefabHash: 3007203939429111487
+  PrefabHashGenerator: PlayerManager
+  AlwaysReplicateAsRoot: 0
+  DontDestroyWithOwner: 0
 --- !u!114 &1049849559
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2770,8 +2788,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ebad06f3b3f3b234792bc7e7e5705d09, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SettableColorPick: {fileID: 252428222}
   enablePlayerBehaviour: 0
+  SettableColorPick: {fileID: 252428222}
   BombermanColors:
   - BombermanColor: 0
     Head: {fileID: 2100000, guid: f7dbf99c486847c4ca92495f99197ade, type: 2}

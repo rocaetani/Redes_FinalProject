@@ -55,6 +55,7 @@ public class PlayerController : NetworkBehaviour
 
         // Match Events
         Bomb.OnExplosion += detectExplosion;
+        PlayerManager.OnEndMatch += endPlayerMovement;
     }
 
     private void Start()
@@ -73,6 +74,7 @@ public class PlayerController : NetworkBehaviour
         SceneManager.OnMatchLoaded -= moveToSceneSpawn;
 
         Bomb.OnExplosion -= detectExplosion;
+        PlayerManager.OnEndMatch -= endPlayerMovement;
 
         usePlayerCamera(false);
     }
@@ -93,6 +95,8 @@ public class PlayerController : NetworkBehaviour
             ObjectsManager.OverviewCamera?.SetActive(!usePlayerCamera);
         }
     }
+
+    private void endPlayerMovement(bool draw, ulong playerID) => freezePlayer();
 
     private void freezePlayer() => toggleFreeze(true);
     private void unfreezePlayer() => toggleFreeze(false);
@@ -266,10 +270,10 @@ public class PlayerController : NetworkBehaviour
 
     // RPCs
     [ServerRpc(RequireOwnership = false)]
-    private void requestPlayerDeath_ServerRpc()
+    private void requestPlayerDeath_ServerRpc(ServerRpcParams rpcReceiveParams = default)
     {
         // Check winner
-
+        PlayerManager.RegisterDeadPlayer(rpcReceiveParams.Receive.SenderClientId);
 
         broadcastPlayerDeath_ClientRpc();
     }

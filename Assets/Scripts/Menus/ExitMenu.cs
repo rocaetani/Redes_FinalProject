@@ -21,11 +21,13 @@ public class ExitMenu : NetworkBehaviour
     {
         _exitPrompt.text = $"{(IsHost? hostPrompt : clientPrompt)} Match?";
         InputManager.OnEscapeKeyPress += handleMenuState;
+        PlayerManager.OnEndMatch += disableMenu;
     }
 
     private void OnDestroy()
     {
         InputManager.OnEscapeKeyPress -= handleMenuState;
+        PlayerManager.OnEndMatch -= disableMenu;
     }
 
     private void handleMenuState()
@@ -39,6 +41,11 @@ public class ExitMenu : NetworkBehaviour
         {
             stayOnMatch();
         }
+    }
+
+    private void disableMenu(bool draw, ulong winner)
+    {
+        Destroy(gameObject);
     }
 
     // Button Events
