@@ -133,6 +133,10 @@ public class MatchManager : NetworkBehaviour
     private delegate void OnSpawnsAvailableDelegate();
     private event OnSpawnsAvailableDelegate OnSpawnsAvailable;
 
+    // Building Block Dimensions
+    public const int blockSize = 10;
+    public const int blockY = 6;
+
     private static Vector3 _clientSpawnLocation = Vector3.zero;
 
     private static bool _clientSpawnAvailable = false;
@@ -247,10 +251,16 @@ public class MatchManager : NetworkBehaviour
     {
         _spawnLocations = new Stack<Vector3>(_playersPerMatch);
 
-        _spawnLocations.Push(new Vector3(1 * 10, 6, 1 * 10));
-        _spawnLocations.Push(new Vector3(1 * 10, 6,  (mapHeight - 2) * 10));
-        _spawnLocations.Push(new Vector3((mapWidth - 2) * 10, 6, 1 * 10));
-        _spawnLocations.Push(new Vector3((mapWidth - 2) * 10, 6, (mapHeight - 2) * 10));
+        var initialX = blockSize;
+        var finalX = (mapWidth - 2) * blockSize;
+
+        var initialZ = blockSize;
+        var finalZ = (mapHeight - 2) * blockSize;
+
+        _spawnLocations.Push(new Vector3(initialX, blockY, initialZ));
+        _spawnLocations.Push(new Vector3(initialX, blockY, finalZ));
+        _spawnLocations.Push(new Vector3(finalX,   blockY, initialZ));
+        _spawnLocations.Push(new Vector3(finalX,   blockY, finalZ));
 
         _spawnsAvailable = true;
         OnSpawnsAvailable?.Invoke();
@@ -264,7 +274,7 @@ public class MatchManager : NetworkBehaviour
             for(int z = 0; z < mapHeight; z++)
             {
                 // Instantiate the floor
-                Vector3 position = new Vector3(x*10+5, 0, z*10+5);
+                Vector3 position = new Vector3(x*blockSize + blockSize/2, 0, z*blockSize + blockSize/2);
                 Instantiate(FloorPrefab, position, Quaternion.identity, _prefabContainer);
 
                 // Instantiate unbreakable walls in a grid pattern
